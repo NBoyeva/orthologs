@@ -7,7 +7,7 @@ import argparse
 '''
 Script usage
 ------------------------------------------------------------------------------------------
-Takes a directory with fasta files isoforms in which to be filtered, 
+Takes a directory with FASTA-files isoforms in which to be filtered, 
 yeilds the output directory with filtered files.
 
 Example of usage:
@@ -15,7 +15,6 @@ cmd>>> python3 filter.py -i ./input_data_dir -o ./output_data_dir
 '''
 
 # Defining command line arguments
-# Directories names must be provided with slash (/) at the end
 parser = argparse.ArgumentParser(description="Protein isoforms filtration")
 parser.add_argument("-i", "--indir", help="Directory with unfiltered fasta", required=True)
 parser.add_argument("-o", "--outdir", help="Directory for output fasta", required=True)
@@ -72,8 +71,9 @@ for file in files:
 
 		else: # we drop sequences which were not translated correctly (have stop-codons)
 			names.append('drop this')
-
-	filter_list = [x != 'drop this' for x in names] # create a boolean list, where False is for record to be dropped and True is for record to be left
+	
+	# create a boolean list, where False is for record to be dropped and True is for record to be left
+	filter_list = [x != 'drop this' for x in names] 
 	filtered_records = list(compress(records, filter_list)) # drop certain records
 
 	new_file = output_dir + file[:-4] + '.filtered.fa' # create output filename
