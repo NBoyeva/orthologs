@@ -2,12 +2,53 @@ from Bio import SeqIO
 import pandas as pd
 import numpy as np
 import os
+import argparse
 
-os.chdir('/home/timurk/bio/orthomaster/data/Boyeva_all_files/abs')
+of_path = False
+threads = 4
+
+parser = argparse.ArgumentParser(description="OrthoFinder Output Parsing")
+parser.add_argument("-w", "--workdir", help="Working directory for the project", required=False)
+parser.add_argument("-p", "--orth", help="OrthoFinder path", required=False)
+parser.add_argument("-i", "--input", help="Inpur directory for OrthoFinder", required=False)
+parser.add_argument("-t", "--threads", help="Number of threads", required=False)
+parser.add_argument("-r", "--results", help="Directory for OrthoFinder results being parsed", required=False)
+args = parser.parse_args()
+
+work_dir = args.workdir
+of_path = args.orth
+in_dir = args.input
+threads = args.threads
+results_dir = args.results
+
+if work_dir:
+    os.chdir(work_dir)
+#os.chdir('/home/timurk/bio/orthomaster/data/Boyeva_all_files/abs')
 # os.chdir("/home/timurk/bsu/laboratory_analysis/proteoms/")
 
+# Running OrthoFinder
+if of_path:
+    os.system(of_path + ' -f ' + in_dir + ' -t ' + threads)
+
 # import orthologs summary from OrthoFinder output
-path_to_ortho_finder_data = './OrthoFinder/Results_Dec14/Orthogroups/Orthogroups.tsv'
+if len(os.listdir(os.path.join('.','OrthoFinder'))) == 1: 
+    path_to_ortho_finder_data = os.path.join('.', 
+                                             'OrthoFinder', 
+                                             os.listdir(os.path.join('.','OrthoFinder'))[0], 
+                                             'Orthogroups', 
+                                             'Orthogroups.tsv')
+elif results_dir:
+    path_to_ortho_finder_data = os.path.join('.', 
+                                             'OrthoFinder', 
+                                             results_dir, 
+                                             'Orthogroups', 
+                                             'Orthogroups.tsv')
+else:
+    available_results_dirs = os.listdir(os.path.join('.','OrthoFinder'))
+    os.system(f'echo "Specify results directory. Available options: {available_results_dirs}"')
+
+
+#path_to_ortho_finder_data = './OrthoFinder/Results_Dec14/Orthogroups/Orthogroups.tsv'
 # path_to_ortho_finder_data = '/home/timurk/bsu/laboratory_analysis/proteoms/oresults/Orthogroups/Orthogroups.tsv'
 
 if not os.path.exists(script_output := os.path.join('.', 'orthologs')):
@@ -26,7 +67,6 @@ counts = counts.replace(np.nan, 0)
 # was a string separated into identifiers by comma.
 # So here we make a list from it
 counts = counts.map(lambda x: len(x.split(', ')) if type(x) == str else x)
-# counts['Orthogroup'] = orthogroups['Orthogroup'] # adding Orthogroup column
 
 # make a subset of initial dataset based on counts of orthologs
 # (they should be equal to 1 since we need 1:1 orthologs)
@@ -48,13 +88,16 @@ idents_all_sp.columns = map(lambda x: x.replace('.filtered', ''),
 # them further during annotation process) for all orthogroups we can
 # extract one sequence from each orthogroup by means of extraction of all
 # sequences from an arbitrary species listed in idents_all_sp dataframe.
-# In this case arbitrary species is Corynebacterium_amycolatum
+# In this case arbitrary species is Corynebacterium_amycolatum.
 
 idents_1_sp = idents_all_sp.iloc[:, 1].tolist()
 
 path_to_filtered_genome = idents_all_sp.iloc[:, 1].name
 
-all_recs_1_sp = list(SeqIO.parse("./filtered" + '/' + path_to_filtered_genome + '.filtered.fa', 'fasta'))
+all_recs_1_sp = list(SeqIO.parse(os.path.join('.',
+                                              'filtered',
+                                              'path_to_filtered_genome' + '.filtered.fa'), 
+                                              'fasta'))
 
 recs_1_sp = []
 
